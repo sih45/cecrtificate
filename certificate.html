@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Certificate DApp</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
+</head>
+<body>
+  <h2>Blockchain Certificate DApp</h2>
+
+  <!-- Connect Wallet -->
+  <button id="connect">Connect Wallet</button>
+  <p id="walletAddress"></p>
+
+  <hr/>
+
+  <!-- Admin Section -->
+  <h3>Admin: Issue Certificate</h3>
+  <input id="student" placeholder="Student Wallet Address"/>
+  <input id="name" placeholder="Name"/>
+  <input id="course" placeholder="Course"/>
+  <input id="date" placeholder="Date"/>
+  <button id="issue">Issue Certificate</button>
+
+  <hr/>
+
+  <!-- Student/Public Section -->
+  <h3>View Certificates</h3>
+  <input id="searchWallet" placeholder="Wallet Address"/>
+  <button id="view">View Certificates</button>
+  <div id="certList"></div>
+
+<script>
+const contractAddress = "0xcD6f3fB3cD06140089BC860712c9D05595E31dfF";
+const abi = [
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "student",
+				"type": "address"
+			},
+			{
+				"internalType": "string",
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "course",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "date",
+				"type": "string"
+			}
+		],
+		"name": "issueCertificate",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"inputs": [],
+		"name": "admin",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "certificates",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "course",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "date",
+				"type": "string"
+			},
+			{
+				"internalType": "bool",
+				"name": "valid",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "student",
+				"type": "address"
+			}
+		],
+		"name": "getCertificates",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "string",
+						"name": "name",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "course",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "date",
+						"type": "string"
+					},
+					{
+						"internalType": "bool",
+						"name": "valid",
+						"type": "bool"
+					}
+				],
+				"internalType": "struct CertificateIssuer.Certificate[]",
+				"name": "",
+				"type": "tuple[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
+];
+
+let provider, signer, contract;
+
+document.getElementById("connect").onclick = async () => {
+  provider = new ethers.providers.Web3Provider(window.ethereum);
+  await provider.send("eth_requestAccounts", []);
+  signer = provider.getSigner();
+  contract = new ethers.Contract(contractAddress, abi, signer);
+  document.getElementById("walletAddress").innerText = "Connected: " + await signer.getAddress();
+};
+
+// Issue Certificate (Admin Only)
+document.getElementById("issue").onclick = async () => {
+  const student = document.getElementById("student").value;
+  const name = document.getElementById("name").value;
+  const course = document.getElementById("course").value;
+  const date = document.getElementById("date").value;
+
+  const tx = await contract.issueCertificate(student, name, course, date);
+  await tx.wait();
+  alert("Certificate issued!");
+};
+
+// View Certificates
+document.getElementById("view").onclick = async () => {
+  const wallet = document.getElementById("searchWallet").value;
+  const certs = await contract.getCertificates(wallet);
+
+  let html = "<table border='1'><tr><th>Name</th><th>Course</th><th>Date</th></tr>";
+  certs.forEach(c => {
+    html += `<tr><td>${c.name}</td><td>${c.course}</td><td>${c.date}</td></tr>`;
+  });
+  html += "</table>";
+
+  document.getElementById("certList").innerHTML = html;
+};
+</script>
+</body>
+</html>
